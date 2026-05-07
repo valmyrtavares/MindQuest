@@ -119,10 +119,18 @@ function generateProblem() {
   return { expression, answer };
 }
 
+// --- Soma Logic Helpers ---
+function generateSomaProblem(phase) {
+  const max = phase === 'units' ? 9 : 30;
+  const a = Math.floor(Math.random() * max) + 1;
+  const b = Math.floor(Math.random() * max) + 1;
+  return { a, b, expression: `${a} + ${b}`, answer: a + b };
+}
+
 // --- Menu Component ---
 const Menu = ({ onNavigate }) => {
   const options = [
-    { id: 'soma', title: 'Somas', icon: <Zap className="mr-2" />, active: false },
+    { id: 'soma', title: 'Somas', icon: <Zap className="mr-2" />, active: true },
     { id: 'math', title: 'Calculo Mestre', icon: <Terminal className="mr-2" />, active: true },
     { id: 'logic', title: 'Lógica Pura', icon: <Brain className="mr-2" />, active: false },
     { id: 'history', title: 'Fatos & Mitos', icon: <BookOpen className="mr-2" />, active: false },
@@ -171,8 +179,45 @@ const Menu = ({ onNavigate }) => {
   );
 };
 
-// --- MathChallenge Component ---
-const MathChallenge = ({ onBack }) => {
+
+
+// --- HeroPrompt Component ---
+const HeroPrompt = ({ onConfirm }) => {
+  const [name, setName] = useState('');
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
+        <Card className="matrix-card p-8 text-center">
+          <h2 className="text-3xl font-bold mb-6 glow-text tracking-tighter uppercase">
+            IDENTIFICAÇÃO NECESSÁRIA
+          </h2>
+          <p className="text-xl mb-8 opacity-80 uppercase tracking-tight">
+            Qual é o nome do Heroi que aceita o desafio?
+          </p>
+          <Input 
+            value={name} 
+            onChange={(e) => setName(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && name.trim() && onConfirm(name)}
+            placeholder="_NOME_HEROI"
+            className="matrix-input text-2xl h-16 mb-8 text-center"
+            autoFocus
+          />
+          <Button 
+            onClick={() => name.trim() && onConfirm(name)}
+            className="w-full matrix-button py-8 text-xl font-bold"
+            disabled={!name.trim()}
+          >
+            ACEITAR DESAFIO
+          </Button>
+        </Card>
+      </motion.div>
+    </div>
+  );
+};
+
+// --- MathChallenge Component (Original) ---
+const MathChallenge = ({ heroName, onBack }) => {
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [score, setScore] = useState(0);
   const [problem, setProblem] = useState(generateProblem());
@@ -191,11 +236,7 @@ const MathChallenge = ({ onBack }) => {
   const handleSubmit = () => {
     const userAnswerNum = parseFloat(userAnswer);
     if (isNaN(userAnswerNum)) {
-      toast({
-        title: "ERRO DE ENTRADA",
-        description: "ENTRADA NÃO NUMÉRICA DETECTADA.",
-        variant: "destructive",
-      });
+      toast({ title: "ERRO", description: "INSIRA UM NÚMERO.", variant: "destructive" });
       return;
     }
 
@@ -203,15 +244,15 @@ const MathChallenge = ({ onBack }) => {
       setScore(score + 1);
       setIsCorrect(true);
       toast({
-        title: "SUCESSO",
-        description: "CALCULO CORRETO.",
+        title: "CORRETO",
+        description: `PARABÉNS ${heroName.toUpperCase()}! VOCÊ ACERTOU.`,
         className: "matrix-card border-green-500",
       });
     } else {
       setIsCorrect(false);
       toast({
         title: "FALHA",
-        description: `VALOR ESPERADO: ${problem.answer}.`,
+        description: `NÃO FOI DESSA VEZ, ${heroName.toUpperCase()}!`,
         variant: "destructive",
       });
     }
@@ -227,40 +268,19 @@ const MathChallenge = ({ onBack }) => {
       setShowFeedback(false);
     } else {
       setGameOver(true);
-      // Save high score to localStorage
-      const savedHigh = localStorage.getItem('math_high_score') || 0;
-      if (score > savedHigh) {
-        localStorage.setItem('math_high_score', score);
-      }
     }
-  };
-
-  const restartGame = () => {
-    setCurrentQuestion(1);
-    setScore(0);
-    setProblem(generateProblem());
-    setUserAnswer('');
-    setIsCorrect(null);
-    setShowFeedback(false);
-    setGameOver(false);
   };
 
   if (gameOver) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Card className="w-full max-w-md matrix-card text-center">
-          <CardHeader>
-            <div className="flex justify-center mb-4"><Award className="h-16 w-16 text-yellow-400 glow-text" /></div>
-            <CardTitle className="text-4xl font-bold tracking-tighter">SESSÃO FINALIZADA</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl mb-6">PONTUAÇÃO: <span className="text-green-400 font-bold">{score}/{TOTAL_QUESTIONS}</span></p>
-            <p className="text-sm opacity-70">Sua inteligência foi aumentada em {(score/TOTAL_QUESTIONS * 10).toFixed(1)}%.</p>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button onClick={restartGame} className="w-full matrix-button py-6">REINICIAR</Button>
-            <Button onClick={onBack} variant="ghost" className="text-xs opacity-50">VOLTAR AO MENU</Button>
-          </CardFooter>
+        <Card className="w-full max-w-md matrix-card text-center p-8">
+          <Award className="h-20 w-20 text-yellow-400 mx-auto mb-4 glow-text" />
+          <h2 className="text-4xl font-bold mb-2 tracking-tighter">SESSÃO FINALIZADA</h2>
+          <p className="text-xl opacity-70 mb-4 tracking-widest">{heroName.toUpperCase()}</p>
+          <p className="text-2xl mb-8">PONTUAÇÃO: <span className="text-green-400">{score}/{TOTAL_QUESTIONS}</span></p>
+          <Button onClick={() => { setGameOver(false); setScore(0); setCurrentQuestion(1); setProblem(generateProblem()); }} className="w-full matrix-button py-6 mb-4">REINICIAR</Button>
+          <Button onClick={onBack} variant="ghost" className="opacity-50">VOLTAR AO MENU</Button>
         </Card>
       </div>
     );
@@ -270,26 +290,24 @@ const MathChallenge = ({ onBack }) => {
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <motion.div
         key={currentQuestion}
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-lg"
       >
         <Card className="matrix-card">
           <CardHeader>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs opacity-50 uppercase tracking-widest">Calculo Mestre</span>
+              <span className="text-xs opacity-50 uppercase tracking-widest">Calculo Mestre | {heroName}</span>
               <span className="text-xs opacity-50 uppercase tracking-widest">Q: {currentQuestion}/{TOTAL_QUESTIONS}</span>
             </div>
-            <CardTitle className="text-3xl font-bold text-center glow-text">
-              RESOLVA
+            <CardTitle className="text-3xl font-bold text-center glow-text uppercase">
+              Resolva a Equação
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="text-center">
               <motion.p 
                 className="text-4xl sm:text-6xl font-mono font-bold bg-green-500/10 p-6 rounded-none border-l-4 border-green-500 inline-block"
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
               >
                 {problem.expression}
               </motion.p>
@@ -300,7 +318,7 @@ const MathChallenge = ({ onBack }) => {
                 value={userAnswer}
                 onChange={handleInputChange}
                 onKeyPress={(e) => e.key === 'Enter' && !showFeedback && handleSubmit()}
-                placeholder="_ENTRADA_DADOS"
+                placeholder="_ENTRADA"
                 className="matrix-input text-2xl h-16 text-center"
                 autoFocus
                 disabled={showFeedback}
@@ -310,14 +328,14 @@ const MathChallenge = ({ onBack }) => {
           <CardFooter className="flex flex-col gap-4">
             {!showFeedback ? (
               <Button onClick={handleSubmit} className="w-full matrix-button py-6 text-xl">
-                ENVIAR
+                PROCESSAR
               </Button>
             ) : (
               <Button onClick={handleNextQuestion} className="w-full matrix-button py-6 text-xl bg-green-500/20">
-                PRÓXIMO {'>'}{'>'}
+                PRÓXIMO
               </Button>
             )}
-            <Button onClick={onBack} variant="ghost" className="text-xs opacity-30 mt-4">ABORTAR SESSÃO</Button>
+            <Button onClick={onBack} variant="ghost" className="text-xs opacity-30">ABORTAR</Button>
           </CardFooter>
         </Card>
       </motion.div>
@@ -325,9 +343,258 @@ const MathChallenge = ({ onBack }) => {
   );
 };
 
+// --- SomaChallenge Component ---
+const SomaChallenge = ({ heroName, onBack }) => {
+  const [phase, setPhase] = useState('units'); // 'units' or 'expanded'
+  const [currentQuestion, setCurrentQuestion] = useState(1);
+  const [score, setScore] = useState(0);
+  const [hits, setHits] = useState(0);
+  const [misses, setMisses] = useState(0);
+  const [problem, setProblem] = useState(generateSomaProblem('units'));
+  const [userAnswer, setUserAnswer] = useState('');
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [phaseMessage, setPhaseMessage] = useState(null);
+  const [resumePrompt, setResumePrompt] = useState(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const savedProgress = localStorage.getItem('soma_progress');
+    if (savedProgress && savedProgress !== 'units') {
+      setResumePrompt(savedProgress);
+    }
+  }, []);
+
+  const handleInputChange = (e) => {
+    setUserAnswer(e.target.value);
+    setIsCorrect(null);
+    setShowFeedback(false);
+  };
+
+  const handleResume = (shouldResume) => {
+    if (shouldResume && resumePrompt) {
+      setPhase(resumePrompt);
+      setProblem(generateSomaProblem(resumePrompt));
+    } else {
+      setPhase('units');
+      setProblem(generateSomaProblem('units'));
+      localStorage.setItem('soma_progress', 'units');
+    }
+    setResumePrompt(null);
+    setScore(0);
+    setHits(0);
+    setMisses(0);
+    setCurrentQuestion(1);
+  };
+
+  const handleSubmit = () => {
+    const userAnswerNum = parseInt(userAnswer);
+    if (isNaN(userAnswerNum)) {
+      toast({ title: "ERRO", description: "INSIRA UM NÚMERO.", variant: "destructive" });
+      return;
+    }
+
+    if (userAnswerNum === problem.answer) {
+      setScore(score + 1);
+      setHits(hits + 1);
+      setIsCorrect(true);
+    } else {
+      setMisses(misses + 1);
+      setIsCorrect(false);
+    }
+    setShowFeedback(true);
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestion < 10) {
+      setCurrentQuestion(currentQuestion + 1);
+      setProblem(generateSomaProblem(phase));
+      setUserAnswer('');
+      setIsCorrect(null);
+      setShowFeedback(false);
+    } else {
+      // Check for phase transition
+      if (phase === 'units') {
+        if (score >= 7) {
+          localStorage.setItem('soma_progress', 'expanded');
+          setPhaseMessage({
+            title: `Parabéns ${heroName}!`,
+            text: "Você já pode tentar o próximo passo. Soma com números maiores.",
+            success: true
+          });
+        } else {
+          setPhaseMessage({
+            title: `Tente de novo, ${heroName}`,
+            text: `Seus acertos (${score}/10) são insuficientes para a próxima fase.`,
+            success: false
+          });
+        }
+      } else {
+        setGameOver(true);
+      }
+    }
+  };
+
+  const startNextPhase = () => {
+    if (phaseMessage.success) {
+      setPhase('expanded');
+      setProblem(generateSomaProblem('expanded'));
+    } else {
+      setPhase('units');
+      setProblem(generateSomaProblem('units'));
+    }
+    setCurrentQuestion(1);
+    setScore(0);
+    setHits(0);
+    setMisses(0);
+    setUserAnswer('');
+    setIsCorrect(null);
+    setShowFeedback(false);
+    setPhaseMessage(null);
+  };
+
+  if (resumePrompt) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Card className="w-full max-w-md matrix-card text-center p-8">
+          <h2 className="text-3xl font-bold mb-4 glow-text uppercase tracking-tighter">PROGRESSO DETECTADO</h2>
+          <p className="text-xl mb-8 opacity-80 uppercase tracking-tight font-bold underline">Heroi: {heroName}</p>
+          <p className="text-xl mb-8 opacity-80 uppercase">Estágio atual: <span className="text-green-400 font-bold">{resumePrompt === 'expanded' ? 'DEZENAS' : 'UNIDADES'}</span></p>
+          <div className="flex flex-col gap-4">
+            <Button onClick={() => handleResume(true)} className="matrix-button py-6 text-xl">CONTINUAR JORNADA</Button>
+            <Button onClick={() => handleResume(false)} variant="ghost" className="opacity-50 text-xs">RECOMEÇAR DO ZERO</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (phaseMessage) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Card className="w-full max-w-md matrix-card text-center p-8">
+          <h2 className={`text-4xl font-bold mb-4 uppercase tracking-tighter ${phaseMessage.success ? 'text-green-400' : 'text-pink-400 opacity-80'}`}>
+            {phaseMessage.title}
+          </h2>
+          <p className="text-xl mb-8 opacity-80">{phaseMessage.text}</p>
+          <Button onClick={startNextPhase} className="w-full matrix-button py-6 text-xl">
+            {phaseMessage.success ? 'INICIAR PRÓXIMA FASE' : 'RECOMEÇAR FASE'}
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (gameOver) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Card className="w-full max-w-md matrix-card text-center p-8">
+          <Award className="h-20 w-20 text-yellow-400 mx-auto mb-4 glow-text" />
+          <h2 className="text-4xl font-bold mb-2 tracking-tighter">TREINAMENTO CONCLUÍDO</h2>
+          <p className="text-xl mb-4 opacity-70 tracking-widest">{heroName.toUpperCase()}</p>
+          <p className="text-2xl mb-8">PONTUAÇÃO FINAL: <span className="text-green-400">{score}/10</span></p>
+          <Button onClick={() => { setGameOver(false); setPhase('units'); setScore(0); setHits(0); setMisses(0); setCurrentQuestion(1); setProblem(generateSomaProblem('units')); }} className="w-full matrix-button py-6 mb-4">REPETIR TUDO</Button>
+          <Button onClick={onBack} variant="ghost" className="opacity-50">VOLTAR AO MENU</Button>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="w-full max-w-lg relative">
+        {/* Extended Score Counter */}
+        <div className="absolute -top-14 left-0 text-xs opacity-50 uppercase tracking-widest hidden sm:block">
+          Heroi: {heroName}
+        </div>
+        <div className="absolute -top-14 right-0 text-xl font-bold glow-text opacity-90 flex gap-4 uppercase tracking-tighter">
+          <span>Q: {currentQuestion}/10</span>
+          <span className="text-green-400">A: {hits}</span>
+          <span className="text-pink-400">E: {misses}</span>
+        </div>
+
+        <Card className="matrix-card">
+          <CardHeader>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs opacity-50 uppercase tracking-widest">Desafio de Somas | {phase === 'units' ? 'UNIDADES' : 'DEZENAS'}</span>
+            </div>
+            <CardTitle className={`text-4xl font-bold text-center transition-colors duration-500 ${isCorrect === true ? 'text-green-400' : isCorrect === false ? 'text-pink-400 opacity-80' : 'text-green-500'}`}>
+              {isCorrect === true ? 'CORRETO' : isCorrect === false ? 'INCORRETO' : 'RESOLVA'}
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-8 pb-8">
+            <div className="text-center">
+              <motion.p 
+                className="text-6xl sm:text-8xl font-mono font-bold bg-green-500/5 p-8 border-l-8 border-green-500 inline-block"
+                key={problem.expression}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+              >
+                {problem.expression}
+              </motion.p>
+            </div>
+
+            <div className="flex flex-col items-center gap-6">
+              <Input
+                type="number"
+                value={userAnswer}
+                onChange={handleInputChange}
+                onKeyPress={(e) => e.key === 'Enter' && !showFeedback && handleSubmit()}
+                placeholder="_?"
+                className="matrix-input text-4xl h-20 text-center"
+                autoFocus
+                disabled={showFeedback}
+              />
+
+              <AnimatePresence>
+                {showFeedback && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`w-full p-6 text-center rounded-none border ${isCorrect ? 'bg-green-500/10 border-green-500' : 'bg-pink-500/10 border-pink-500/50 text-pink-400'}`}
+                  >
+                    {isCorrect ? (
+                      <div className="space-y-1">
+                        <p className="text-3xl font-bold uppercase tracking-tighter">Parabéns {heroName}</p>
+                        <p className="text-xl opacity-90 uppercase">Resposta correta</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-lg opacity-80 uppercase mb-1">{heroName}, analise o erro:</p>
+                        <p className="text-2xl font-bold uppercase">{problem.a} + {problem.b} = {problem.answer}</p>
+                        <p className="text-lg opacity-80 italic">Sua resposta = {userAnswer || '?'}</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex flex-col gap-4">
+            {!showFeedback ? (
+              <Button onClick={handleSubmit} className="w-full matrix-button py-8 text-2xl">
+                VERIFICAR
+              </Button>
+            ) : (
+              <Button onClick={handleNextQuestion} className="w-full matrix-button py-8 text-2xl bg-green-500/20">
+                PRÓXIMO {'>'}{'>'}
+              </Button>
+            )}
+            <Button onClick={onBack} variant="ghost" className="text-xs opacity-30">SAIR</Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
 // --- Main App Component ---
 function App() {
   const [path, setPath] = useState(window.location.pathname);
+  const [heroName, setHeroName] = useState(localStorage.getItem('hero_name') || '');
 
   useEffect(() => {
     const handlePopState = () => {
@@ -343,6 +610,11 @@ function App() {
     setPath(fullPath);
   };
 
+  const handleHeroConfirm = (name) => {
+    setHeroName(name);
+    localStorage.setItem('hero_name', name);
+  };
+
   return (
     <div className="min-h-screen text-green-500 selection:bg-green-500 selection:text-black">
       <MatrixRain />
@@ -351,8 +623,12 @@ function App() {
         <AnimatePresence mode="wait">
           {path === '/' || path === '' ? (
             <Menu key="menu" onNavigate={navigate} />
+          ) : !heroName ? (
+            <HeroPrompt key="hero" onConfirm={handleHeroConfirm} />
           ) : path === '/math' ? (
-            <MathChallenge key="math" onBack={() => navigate('/')} />
+            <MathChallenge key="math" heroName={heroName} onBack={() => navigate('/')} />
+          ) : path === '/soma' ? (
+            <SomaChallenge key="soma" heroName={heroName} onBack={() => navigate('/')} />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-screen">
               <h1 className="text-4xl font-bold glow-text mb-4">404 - LOST IN THE MATRIX</h1>
