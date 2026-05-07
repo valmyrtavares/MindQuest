@@ -1,0 +1,103 @@
+
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    :root {
+      --background: 0 100% 1%; /* #000500 */
+      --foreground: 135 100% 50%; /* #00ff41 */
+      --card: 0 100% 2%;
+      --card-foreground: 135 100% 50%;
+      --popover: 0 100% 2%;
+      --popover-foreground: 135 100% 50%;
+      --primary: 135 100% 50%;
+      --primary-foreground: 0 100% 0%;
+      --secondary: 135 100% 15%;
+      --secondary-foreground: 135 100% 50%;
+      --muted: 135 100% 10%;
+      --muted-foreground: 135 50% 40%;
+      --accent: 135 100% 25%;
+      --accent-foreground: 135 100% 50%;
+      --destructive: 0 100% 50%;
+      --destructive-foreground: 0 0% 100%;
+      --border: 135 100% 20%;
+      --input: 135 100% 10%;
+      --ring: 135 100% 50%;
+      --radius: 0px; /* Matrix/Terminal usually has sharp corners */
+    }
+
+    body {
+      background-color: #000;
+      color: #00ff41;
+      font-family: 'Courier New', Courier, monospace;
+      overflow-x: hidden;
+    }
+
+    .matrix-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    .glow-text {
+      text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+    }
+
+    .matrix-card {
+      background: rgba(0, 20, 0, 0.8) !important;
+      border: 1px solid #00ff41 !important;
+      box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+    }
+
+    .matrix-button {
+      background: transparent !important;
+      border: 1px solid #00ff41 !important;
+      color: #00ff41 !important;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .matrix-button:hover {
+      background: #00ff41 !important;
+      color: #000 !important;
+      box-shadow: 0 0 20px #00ff41;
+    }
+
+    .matrix-input {
+      background: rgba(0, 40, 0, 0.5) !important;
+      border: 1px solid #00ff41 !important;
+      color: #00ff41 !important;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    /* Scanline effect */
+    body::before {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 2000;
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #00ff41;
+    }
+    
