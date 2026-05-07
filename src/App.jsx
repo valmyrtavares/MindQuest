@@ -188,7 +188,6 @@ function generateProblemByType(type, phase) {
 const Menu = ({ onNavigate }) => {
   const options = [
     { id: 'soma', title: 'Somas', icon: <Zap className="mr-2" />, active: true },
-    { id: 'subtracao', title: 'Subtrações', icon: <Repeat className="mr-2" />, active: true },
     { id: 'multi', title: 'Multiplicações', icon: <Cpu className="mr-2" />, active: false },
     { id: 'div', title: 'Divisões', icon: <BookOpen className="mr-2" />, active: false },
     { id: 'math', title: 'Calculo Mestre', icon: <Terminal className="mr-2" />, active: true },
@@ -401,23 +400,15 @@ const MathChallenge = ({ heroName, onBack }) => {
 
 // --- ProgressiveChallenge Component (Generic) ---
 const ProgressiveChallenge = ({ type, heroName, onBack }) => {
-  const SOMA_PHASES = [
-    { id: 'units', title: 'UNIDADES', description: 'Operações simples com números de 1 a 9.' },
-    { id: 'expanded', title: 'DEZENAS', description: 'Operações com números maiores, de 1 a 30.' },
+  const PHASES = [
+    { id: 'units', title: 'UNIDADES', description: 'Somas simples com números de 1 a 9.' },
+    { id: 'expanded', title: 'DEZENAS', description: 'Somas com números maiores, de 1 a 30.' },
     { id: 'negative_units', title: 'NEGATIVOS (UNIDADES)', description: 'Agora incluiremos números negativos para testar sua mente.' },
     { id: 'negative_expanded', title: 'NEGATIVOS (DEZENAS)', description: 'Números positivos e negativos entre 1 e 30.' },
     { id: 'triple_terms', title: 'SEQUÊNCIA TRIPLA', description: 'Três números em sequência para processamento rápido.' }
   ];
 
-  const SUB_PHASES = [
-    { id: 'negative_units', title: 'NEGATIVOS (UNIDADES)', description: 'Subtrações com números negativos. Ex: 3 - 7 = -4.' },
-    { id: 'negative_expanded', title: 'NEGATIVOS (DEZENAS)', description: 'Desafio ampliado com números até 30.' },
-    { id: 'triple_terms', title: 'SEQUÊNCIA TRIPLA', description: 'Três números em sequência. Ex: 15 - 8 - 12.' }
-  ];
-
-  const PHASES = type === 'soma' ? SOMA_PHASES : SUB_PHASES;
   const storageKey = `${type}_progress`;
-
   const [phase, setPhase] = useState(PHASES[0].id); 
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [score, setScore] = useState(0);
@@ -434,8 +425,7 @@ const ProgressiveChallenge = ({ type, heroName, onBack }) => {
 
   useEffect(() => {
     const savedProgress = localStorage.getItem(storageKey);
-    // Ensure the saved progress is valid for the current set of phases
-    if (savedProgress && savedProgress !== PHASES[0].id && PHASES.some(p => p.id === savedProgress)) {
+    if (savedProgress && savedProgress !== PHASES[0].id) {
       setResumePrompt(savedProgress);
     }
   }, [type, storageKey]);
@@ -592,7 +582,7 @@ const ProgressiveChallenge = ({ type, heroName, onBack }) => {
         <Card className="matrix-card">
           <CardHeader>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs opacity-50 uppercase tracking-widest">{type === 'soma' ? 'Somas' : 'Subtrações'} | {currentPhaseInfo.title}</span>
+              <span className="text-xs opacity-50 uppercase tracking-widest">{type === 'soma' ? 'Somas' : 'Desafio'} | {currentPhaseInfo.title}</span>
             </div>
             <CardTitle className={`text-4xl font-bold text-center transition-colors duration-500 ${isCorrect === true ? 'text-green-400' : isCorrect === false ? 'text-pink-400 opacity-80' : 'text-green-500'}`}>
               {isCorrect === true ? 'CORRETO' : isCorrect === false ? 'INCORRETO' : 'RESOLVA'}
@@ -704,8 +694,6 @@ function App() {
             <MathChallenge key="math" heroName={heroName} onBack={() => navigate('/')} />
           ) : path === '/soma' ? (
             <ProgressiveChallenge key="soma" type="soma" heroName={heroName} onBack={() => navigate('/')} />
-          ) : path === '/subtracao' ? (
-            <ProgressiveChallenge key="subtracao" type="subtracao" heroName={heroName} onBack={() => navigate('/')} />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-screen">
               <h1 className="text-4xl font-bold glow-text mb-4">404 - LOST IN THE MATRIX</h1>
