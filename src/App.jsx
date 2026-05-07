@@ -119,21 +119,79 @@ function generateProblem() {
   return { expression, answer };
 }
 
-// --- Soma Logic Helpers ---
-function generateSomaProblem(phase) {
-  const max = phase === 'units' ? 9 : 30;
-  const a = Math.floor(Math.random() * max) + 1;
-  const b = Math.floor(Math.random() * max) + 1;
-  return { a, b, expression: `${a} + ${b}`, answer: a + b };
+// --- Challenge Logic Helpers ---
+function generateProblemByType(type, phase) {
+  const getRand = (max, includeNegative = false) => {
+    let num = Math.floor(Math.random() * max) + 1;
+    if (includeNegative && Math.random() > 0.5) num *= -1;
+    return num;
+  };
+
+  if (type === 'soma') {
+    if (phase === 'units') {
+      const a = getRand(9); const b = getRand(9);
+      return { expression: `${a} + ${b}`, answer: a + b };
+    }
+    if (phase === 'expanded') {
+      const a = getRand(30); const b = getRand(30);
+      return { expression: `${a} + ${b}`, answer: a + b };
+    }
+    if (phase === 'negative_units') {
+      const a = getRand(9, true); const b = getRand(9, true);
+      const op = b < 0 ? '-' : '+';
+      return { expression: `${a} ${op} ${Math.abs(b)}`, answer: a + b };
+    }
+    if (phase === 'negative_expanded') {
+      const a = getRand(30, true); const b = getRand(30, true);
+      const op = b < 0 ? '-' : '+';
+      return { expression: `${a} ${op} ${Math.abs(b)}`, answer: a + b };
+    }
+    if (phase === 'triple_terms') {
+      const a = getRand(30, true); const b = getRand(30, true); const c = getRand(30, true);
+      const op1 = b < 0 ? '-' : '+'; const op2 = c < 0 ? '-' : '+';
+      return { expression: `${a} ${op1} ${Math.abs(b)} ${op2} ${Math.abs(c)}`, answer: a + b + c };
+    }
+  }
+
+  if (type === 'subtracao') {
+    if (phase === 'units') {
+      let a = getRand(9); let b = getRand(9);
+      if (b > a) [a, b] = [b, a];
+      return { expression: `${a} - ${b}`, answer: a - b };
+    }
+    if (phase === 'expanded') {
+      let a = getRand(30); let b = getRand(30);
+      if (b > a) [a, b] = [b, a];
+      return { expression: `${a} - ${b}`, answer: a - b };
+    }
+    if (phase === 'negative_units') {
+      const a = getRand(9, true); const b = getRand(9, true);
+      const op = b < 0 ? '+' : '-';
+      return { expression: `${a} ${op} ${Math.abs(b)}`, answer: a - b };
+    }
+    if (phase === 'negative_expanded') {
+      const a = getRand(30, true); const b = getRand(30, true);
+      const op = b < 0 ? '+' : '-';
+      return { expression: `${a} ${op} ${Math.abs(b)}`, answer: a - b };
+    }
+    if (phase === 'triple_terms') {
+      const a = getRand(30, true); const b = getRand(30, true); const c = getRand(30, true);
+      const op1 = b < 0 ? '+' : '-'; const op2 = c < 0 ? '+' : '-';
+      return { expression: `${a} ${op1} ${Math.abs(b)} ${op2} ${Math.abs(c)}`, answer: a - b - c };
+    }
+  }
+
+  return { expression: '1 + 1', answer: 2 };
 }
 
 // --- Menu Component ---
 const Menu = ({ onNavigate }) => {
   const options = [
     { id: 'soma', title: 'Somas', icon: <Zap className="mr-2" />, active: true },
+    { id: 'subtracao', title: 'Subtrações', icon: <Repeat className="mr-2" />, active: true },
+    { id: 'multi', title: 'Multiplicações', icon: <Cpu className="mr-2" />, active: false },
+    { id: 'div', title: 'Divisões', icon: <BookOpen className="mr-2" />, active: false },
     { id: 'math', title: 'Calculo Mestre', icon: <Terminal className="mr-2" />, active: true },
-    { id: 'logic', title: 'Lógica Pura', icon: <Brain className="mr-2" />, active: false },
-    { id: 'history', title: 'Fatos & Mitos', icon: <BookOpen className="mr-2" />, active: false },
   ];
 
   return (
@@ -178,8 +236,6 @@ const Menu = ({ onNavigate }) => {
     </div>
   );
 };
-
-
 
 // --- HeroPrompt Component ---
 const HeroPrompt = ({ onConfirm }) => {
@@ -280,7 +336,7 @@ const MathChallenge = ({ heroName, onBack }) => {
           <p className="text-xl opacity-70 mb-4 tracking-widest">{heroName.toUpperCase()}</p>
           <p className="text-2xl mb-8">PONTUAÇÃO: <span className="text-green-400">{score}/{TOTAL_QUESTIONS}</span></p>
           <Button onClick={() => { setGameOver(false); setScore(0); setCurrentQuestion(1); setProblem(generateProblem()); }} className="w-full matrix-button py-6 mb-4">REINICIAR</Button>
-          <Button onClick={onBack} variant="ghost" className="opacity-50">VOLTAR AO MENU</Button>
+          <Button onClick={onBack} variant="outline" className="w-full py-4 text-sm opacity-80 hover:opacity-100 uppercase font-bold tracking-widest border-green-500/50">VOLTAR AO MENU</Button>
         </Card>
       </div>
     );
@@ -335,7 +391,7 @@ const MathChallenge = ({ heroName, onBack }) => {
                 PRÓXIMO
               </Button>
             )}
-            <Button onClick={onBack} variant="ghost" className="text-xs opacity-30">ABORTAR</Button>
+            <Button onClick={onBack} variant="ghost" className="w-full py-4 text-sm opacity-60 hover:opacity-100 uppercase font-bold tracking-widest border-green-500/20 border">ABORTAR MISSÃO</Button>
           </CardFooter>
         </Card>
       </motion.div>
@@ -343,14 +399,31 @@ const MathChallenge = ({ heroName, onBack }) => {
   );
 };
 
-// --- SomaChallenge Component ---
-const SomaChallenge = ({ heroName, onBack }) => {
-  const [phase, setPhase] = useState('units'); // 'units' or 'expanded'
+// --- ProgressiveChallenge Component (Generic) ---
+const ProgressiveChallenge = ({ type, heroName, onBack }) => {
+  const SOMA_PHASES = [
+    { id: 'units', title: 'UNIDADES', description: 'Operações simples com números de 1 a 9.' },
+    { id: 'expanded', title: 'DEZENAS', description: 'Operações com números maiores, de 1 a 30.' },
+    { id: 'negative_units', title: 'NEGATIVOS (UNIDADES)', description: 'Agora incluiremos números negativos para testar sua mente.' },
+    { id: 'negative_expanded', title: 'NEGATIVOS (DEZENAS)', description: 'Números positivos e negativos entre 1 e 30.' },
+    { id: 'triple_terms', title: 'SEQUÊNCIA TRIPLA', description: 'Três números em sequência para processamento rápido.' }
+  ];
+
+  const SUB_PHASES = [
+    { id: 'negative_units', title: 'NEGATIVOS (UNIDADES)', description: 'Subtrações com números negativos. Ex: 3 - 7 = -4.' },
+    { id: 'negative_expanded', title: 'NEGATIVOS (DEZENAS)', description: 'Desafio ampliado com números até 30.' },
+    { id: 'triple_terms', title: 'SEQUÊNCIA TRIPLA', description: 'Três números em sequência. Ex: 15 - 8 - 12.' }
+  ];
+
+  const PHASES = type === 'soma' ? SOMA_PHASES : SUB_PHASES;
+  const storageKey = `${type}_progress`;
+
+  const [phase, setPhase] = useState(PHASES[0].id); 
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [score, setScore] = useState(0);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
-  const [problem, setProblem] = useState(generateSomaProblem('units'));
+  const [problem, setProblem] = useState(generateProblemByType(type, PHASES[0].id));
   const [userAnswer, setUserAnswer] = useState('');
   const [isCorrect, setIsCorrect] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -360,11 +433,12 @@ const SomaChallenge = ({ heroName, onBack }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const savedProgress = localStorage.getItem('soma_progress');
-    if (savedProgress && savedProgress !== 'units') {
+    const savedProgress = localStorage.getItem(storageKey);
+    // Ensure the saved progress is valid for the current set of phases
+    if (savedProgress && savedProgress !== PHASES[0].id && PHASES.some(p => p.id === savedProgress)) {
       setResumePrompt(savedProgress);
     }
-  }, []);
+  }, [type, storageKey]);
 
   const handleInputChange = (e) => {
     setUserAnswer(e.target.value);
@@ -375,11 +449,11 @@ const SomaChallenge = ({ heroName, onBack }) => {
   const handleResume = (shouldResume) => {
     if (shouldResume && resumePrompt) {
       setPhase(resumePrompt);
-      setProblem(generateSomaProblem(resumePrompt));
+      setProblem(generateProblemByType(type, resumePrompt));
     } else {
-      setPhase('units');
-      setProblem(generateSomaProblem('units'));
-      localStorage.setItem('soma_progress', 'units');
+      setPhase(PHASES[0].id);
+      setProblem(generateProblemByType(type, PHASES[0].id));
+      localStorage.setItem(storageKey, PHASES[0].id);
     }
     setResumePrompt(null);
     setScore(0);
@@ -409,41 +483,40 @@ const SomaChallenge = ({ heroName, onBack }) => {
   const handleNextQuestion = () => {
     if (currentQuestion < 10) {
       setCurrentQuestion(currentQuestion + 1);
-      setProblem(generateSomaProblem(phase));
+      setProblem(generateProblemByType(type, phase));
       setUserAnswer('');
       setIsCorrect(null);
       setShowFeedback(false);
     } else {
-      // Check for phase transition
-      if (phase === 'units') {
-        if (score >= 7) {
-          localStorage.setItem('soma_progress', 'expanded');
+      const currentPhaseIndex = PHASES.findIndex(p => p.id === phase);
+      if (score >= 7) {
+        if (currentPhaseIndex < PHASES.length - 1) {
+          const nextPhase = PHASES[currentPhaseIndex + 1];
+          localStorage.setItem(storageKey, nextPhase.id);
           setPhaseMessage({
             title: `Parabéns ${heroName}!`,
-            text: "Você já pode tentar o próximo passo. Soma com números maiores.",
+            text: nextPhase.description,
+            nextId: nextPhase.id,
             success: true
           });
         } else {
-          setPhaseMessage({
-            title: `Tente de novo, ${heroName}`,
-            text: `Seus acertos (${score}/10) são insuficientes para a próxima fase.`,
-            success: false
-          });
+          setGameOver(true);
         }
       } else {
-        setGameOver(true);
+        setPhaseMessage({
+          title: `Tente de novo, ${heroName}`,
+          text: `Seus acertos (${score}/10) são insuficientes para a próxima fase.`,
+          nextId: phase,
+          success: false
+        });
       }
     }
   };
 
   const startNextPhase = () => {
-    if (phaseMessage.success) {
-      setPhase('expanded');
-      setProblem(generateSomaProblem('expanded'));
-    } else {
-      setPhase('units');
-      setProblem(generateSomaProblem('units'));
-    }
+    const nextPhaseId = phaseMessage.nextId;
+    setPhase(nextPhaseId);
+    setProblem(generateProblemByType(type, nextPhaseId));
     setCurrentQuestion(1);
     setScore(0);
     setHits(0);
@@ -455,12 +528,13 @@ const SomaChallenge = ({ heroName, onBack }) => {
   };
 
   if (resumePrompt) {
+    const resumePhaseInfo = PHASES.find(p => p.id === resumePrompt) || PHASES[0];
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Card className="w-full max-w-md matrix-card text-center p-8">
           <h2 className="text-3xl font-bold mb-4 glow-text uppercase tracking-tighter">PROGRESSO DETECTADO</h2>
           <p className="text-xl mb-8 opacity-80 uppercase tracking-tight font-bold underline">Heroi: {heroName}</p>
-          <p className="text-xl mb-8 opacity-80 uppercase">Estágio atual: <span className="text-green-400 font-bold">{resumePrompt === 'expanded' ? 'DEZENAS' : 'UNIDADES'}</span></p>
+          <p className="text-xl mb-8 opacity-80 uppercase">Estágio atual: <span className="text-green-400 font-bold">{resumePhaseInfo.title}</span></p>
           <div className="flex flex-col gap-4">
             <Button onClick={() => handleResume(true)} className="matrix-button py-6 text-xl">CONTINUAR JORNADA</Button>
             <Button onClick={() => handleResume(false)} variant="ghost" className="opacity-50 text-xs">RECOMEÇAR DO ZERO</Button>
@@ -491,20 +565,21 @@ const SomaChallenge = ({ heroName, onBack }) => {
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Card className="w-full max-w-md matrix-card text-center p-8">
           <Award className="h-20 w-20 text-yellow-400 mx-auto mb-4 glow-text" />
-          <h2 className="text-4xl font-bold mb-2 tracking-tighter">TREINAMENTO CONCLUÍDO</h2>
+          <h2 className="text-4xl font-bold mb-2 tracking-tighter">MISSÃO CONCLUÍDA</h2>
           <p className="text-xl mb-4 opacity-70 tracking-widest">{heroName.toUpperCase()}</p>
           <p className="text-2xl mb-8">PONTUAÇÃO FINAL: <span className="text-green-400">{score}/10</span></p>
-          <Button onClick={() => { setGameOver(false); setPhase('units'); setScore(0); setHits(0); setMisses(0); setCurrentQuestion(1); setProblem(generateSomaProblem('units')); }} className="w-full matrix-button py-6 mb-4">REPETIR TUDO</Button>
-          <Button onClick={onBack} variant="ghost" className="opacity-50">VOLTAR AO MENU</Button>
+          <Button onClick={() => { setGameOver(false); setPhase(PHASES[0].id); setScore(0); setHits(0); setMisses(0); setCurrentQuestion(1); setProblem(generateProblemByType(type, PHASES[0].id)); }} className="w-full matrix-button py-6 mb-4">REPETIR JORNADA</Button>
+          <Button onClick={onBack} variant="outline" className="w-full py-4 text-sm opacity-80 hover:opacity-100 uppercase font-bold tracking-widest border-green-500/50">VOLTAR AO MENU</Button>
         </Card>
       </div>
     );
   }
 
+  const currentPhaseInfo = PHASES.find(p => p.id === phase) || PHASES[0];
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-lg relative">
-        {/* Extended Score Counter */}
         <div className="absolute -top-14 left-0 text-xs opacity-50 uppercase tracking-widest hidden sm:block">
           Heroi: {heroName}
         </div>
@@ -517,7 +592,7 @@ const SomaChallenge = ({ heroName, onBack }) => {
         <Card className="matrix-card">
           <CardHeader>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs opacity-50 uppercase tracking-widest">Desafio de Somas | {phase === 'units' ? 'UNIDADES' : 'DEZENAS'}</span>
+              <span className="text-xs opacity-50 uppercase tracking-widest">{type === 'soma' ? 'Somas' : 'Subtrações'} | {currentPhaseInfo.title}</span>
             </div>
             <CardTitle className={`text-4xl font-bold text-center transition-colors duration-500 ${isCorrect === true ? 'text-green-400' : isCorrect === false ? 'text-pink-400 opacity-80' : 'text-green-500'}`}>
               {isCorrect === true ? 'CORRETO' : isCorrect === false ? 'INCORRETO' : 'RESOLVA'}
@@ -527,7 +602,7 @@ const SomaChallenge = ({ heroName, onBack }) => {
           <CardContent className="space-y-8 pb-8">
             <div className="text-center">
               <motion.p 
-                className="text-6xl sm:text-8xl font-mono font-bold bg-green-500/5 p-8 border-l-8 border-green-500 inline-block"
+                className="text-5xl sm:text-7xl font-mono font-bold bg-green-500/5 p-8 border-l-8 border-green-500 inline-block"
                 key={problem.expression}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -563,7 +638,7 @@ const SomaChallenge = ({ heroName, onBack }) => {
                     ) : (
                       <div className="space-y-2">
                         <p className="text-lg opacity-80 uppercase mb-1">{heroName}, analise o erro:</p>
-                        <p className="text-2xl font-bold uppercase">{problem.a} + {problem.b} = {problem.answer}</p>
+                        <p className="text-2xl font-bold uppercase">{problem.expression} = {problem.answer}</p>
                         <p className="text-lg opacity-80 italic">Sua resposta = {userAnswer || '?'}</p>
                       </div>
                     )}
@@ -583,7 +658,7 @@ const SomaChallenge = ({ heroName, onBack }) => {
                 PRÓXIMO {'>'}{'>'}
               </Button>
             )}
-            <Button onClick={onBack} variant="ghost" className="text-xs opacity-30">SAIR</Button>
+            <Button onClick={onBack} variant="ghost" className="w-full py-4 text-sm opacity-60 hover:opacity-100 uppercase font-bold tracking-widest border-green-500/20 border">SAIR DA MISSÃO</Button>
           </CardFooter>
         </Card>
       </div>
@@ -628,7 +703,9 @@ function App() {
           ) : path === '/math' ? (
             <MathChallenge key="math" heroName={heroName} onBack={() => navigate('/')} />
           ) : path === '/soma' ? (
-            <SomaChallenge key="soma" heroName={heroName} onBack={() => navigate('/')} />
+            <ProgressiveChallenge key="soma" type="soma" heroName={heroName} onBack={() => navigate('/')} />
+          ) : path === '/subtracao' ? (
+            <ProgressiveChallenge key="subtracao" type="subtracao" heroName={heroName} onBack={() => navigate('/')} />
           ) : (
             <div className="flex flex-col items-center justify-center min-h-screen">
               <h1 className="text-4xl font-bold glow-text mb-4">404 - LOST IN THE MATRIX</h1>
